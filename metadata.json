@@ -1,0 +1,6 @@
+{
+  "name": "AI Detective",
+  "description": "Consumer purchase friction intelligence platform for fashion marketplaces to diagnose wishlist-to-checkout dropoff and generate product experiments.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Google Photos prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400..600,0..1,0" rel="stylesheet" />
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+  <div class="studio">
+    <div class="phone-wrap">
+      <div class="phone" id="phone">
+        <div class="status">
+          <span>3:47</span>
+          <span class="icons">
+            <span class="material-symbols-outlined" style="font-size:18px">signal_cellular_alt</span>
+            <span class="material-symbols-outlined" style="font-size:18px">wifi</span>
+            <span class="material-symbols-outlined" style="font-size:18px">battery_full</span>
+          </span>
+        </div>
+        <div id="app"></div>
+      </div>
+    </div>
+    <aside class="lab">
+      <h2>Prototype controls</h2>
+      <div class="lab-actions">
+        <button type="button" id="resetBtn">Reset</button>
+        <button type="button" class="ghost" id="seedBtn">Seed example note</button>
+        <button type="button" class="ghost" id="simulateBtn">Simulate new photo</button>
+        <button type="button" class="ghost toggle-control" id="clueToggle" aria-pressed="true">Clue chips: on</button>
+      </div>
+      <h2>Event log</h2>
+      <div class="log" id="eventLog"></div>
+    </aside>
+  </div>
+  <script src="js/data.js"></script>
+  <script src="js/search.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
