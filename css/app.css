@@ -435,12 +435,14 @@ body {
 }
 
 .lab {
+  display: none;
   width: min(420px, 100%);
   background: #fff;
   border-radius: 20px;
   padding: 18px 18px 12px;
   box-shadow: 0 8px 30px rgba(0,0,0,.06);
 }
+html.prototype-mode .lab { display: block; }
 .lab h2 { margin: 0 0 4px; font-size: 16px; }
 .lab p { margin: 0 0 12px; color: var(--muted); font-size: 13px; }
 .lab-actions { display: flex; gap: 8px; margin-bottom: 12px; }

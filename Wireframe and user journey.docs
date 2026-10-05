@@ -1,0 +1,401 @@
+ # Photos Note Discovery MVP
+## End-to-End Wireframes and User Journey
+
+**Document purpose:** describe the phone-framed Photos note and retrieval MVP as it currently behaves, from browsing and note capture through rediscovery. This is a product wireframe and journey specification, not a visual redesign.
+
+**Product scope:** the standalone Photos prototype in `index.html`, `js/app.js`, `js/search.js`, and `css/app.css`. The separate desktop AI Detective purchase-intelligence dashboard in `src/` is a different product and is out of scope here.
+
+**Primary user:** a person browsing a photo library who wants to attach a short memory phrase to a photo and later retrieve the photo using that phrase, its place, date, people, or related concepts.
+
+**Core value:** capture a lightweight memory while viewing a photo, then reduce the effort required to find it again.
+
+---
+
+## Experience Map
+
+```mermaid
+flowchart TD
+    Feed[Photos feed] --> Memories[Memories carousel]
+    Feed --> Viewer[Photo viewer]
+    Memories --> Viewer
+    Viewer -->|Prompt appears after delay| NotePrompt[Add a note prompt]
+    NotePrompt -->|Tap| NoteEditor[Inline note editor]
+    NoteEditor -->|Save| Viewer
+    Viewer -->|Info| Info[Photo information sheet]
+    Info -->|Add or edit| InfoEditor[Info note editor]
+    InfoEditor -->|Save| Info
+    Viewer -->|Close| Feed
+    Feed --> Collections[Collections]
+    Collections --> Notes[Notes collection]
+    Notes -->|Open photo| Viewer
+    Notes -->|Edit| NotesEditor[Inline Notes editor]
+    NotesEditor --> Notes
+    Feed -->|Search button| Search[Search / Ask]
+    Feed -->|Floating clue| ClueResults[Clue results]
+    Search -->|Type, suggestion, or clue| Results[Photo results]
+    ClueResults -->|Open result| Viewer
+    Results -->|Open result| Viewer
+    Collections --> People[People & pets]
+    Collections --> Places[Places]
+    Collections --> Albums[Albums]
+    Collections --> Moments[Moments]
+    Collections --> Categories[Documents / screenshots / favorites / trash]
+    Feed --> Settings[Settings]
+```
+
+### Global Shell
+
+```text
+┌────────────────────────────────────────┐
+│ PHONE STATUS BAR                        │
+├────────────────────────────────────────┤
+│ APP VIEWPORT                            │
+│                                          │
+│ Active screen / overlay                 │
+│                                          │
+│                                          │
+│             Floating clue chips         │
+│                                          │
+│       [ Photos | Collections | Create ]  │
+│                                  [Search]│
+└────────────────────────────────────────┘
+
+Prototype-only controls outside the frame:
+[Reset] [Seed example note] [Simulate new photo] [Clue chips on/off]
+Event log
+```
+
+The phone viewport is the boundary for all end-user screens and overlays. The controls below the phone are research/demo controls, not part of the consumer product experience.
+
+---
+
+## Screen Wireframes
+
+### 1. Photos Feed
+
+```text
+┌──────────────────────────────┐
+│ Account              More    │
+│                              │
+│ [Memory] [Memory] [Memory] → │  Memories carousel
+│                              │
+│             Today            │
+│ [photo] [photo] [photo]      │
+│ [photo] [photo] [photo]      │
+│                              │
+│           Yesterday          │
+│ [photo] [photo] [photo]      │  Scrollable, date-grouped grid
+│                              │
+│                         [clue]│  Optional transient clues
+│                         [clue]│
+│ [Photos] [Collections] [Create] [Search]
+└──────────────────────────────┘
+```
+
+- The photo grid is ordered newest first and grouped by relative date headers.
+- Selecting a feed photo or a Memory opens the photo viewer for that item.
+- The active Photos item, Collections item, or Create item is shown in the floating navigation pill.
+- Tapping the round Search button opens Search and consumes any visible floating clue stack.
+- Scrolling the Photos feed dismisses visible floating clues.
+
+### 2. Photo Viewer
+
+```text
+┌──────────────────────────────┐
+│ [Close]                [Info]│
+│                              │
+│                              │
+│          PHOTO               │  Horizontal swipe changes photos
+│                              │
+│                              │
+│       [ Add a note ]         │  Appears after about 1 second when eligible
+│                              │
+│ [Share] [Edit] [Lens] [More] │
+└──────────────────────────────┘
+```
+
+- A small Add a note prompt is scheduled for an unnoted photo that has not already been prompted. It appears after about 1 second and times out after about 5 seconds if ignored.
+- Tapping the prompt expands it in place. The editor supports up to 60 characters, a character counter, contextual suggestion chips, and Save. Selecting a suggestion marks the note source as a suggestion; otherwise the source is typed.
+- Saving stores the note against the photo, collapses the prompt, and displays a brief “Note saved” confirmation.
+- Close returns to the originating screen. Horizontal swipes move through the current viewer list.
+- Once a photo has been prompted, the automatic prompt does not appear again for that photo. A saved note also suppresses it. The Photo notes setting can disable prompts.
+
+### 3. Photo Information Sheet and Note Editor
+
+```text
+┌──────────────────────────────┐
+│ Viewer remains behind sheet  │
+│                              │
+│       ┌────────────────┐     │
+│       │       ─        │     │
+│       │ Info           │     │
+│       │ Date and time  │     │
+│       │ Place · city   │     │
+│       │ People         │     │
+│       │                │     │
+│       │ Note text      │     │
+│       │ [Edit] [Delete]│     │
+│       └────────────────┘     │
+└──────────────────────────────┘
+```
+
+When no note exists, the note area shows “No note” and **Add note**. Selecting Add note or Edit opens the same 60-character input with Save and Cancel. Saving an empty value removes the note. Selecting Delete removes an existing note. Clicking outside the sheet dismisses it.
+
+### 4. Collections and Notes
+
+```text
+┌──────────────────────────────┐
+│ Account       Collections More│
+│ [Favorites] [Trash]          │
+│                              │
+│ [People & pets] [Places]     │
+│ [Documents]   [Albums]       │
+│ [Moments]     [Screenshots]  │
+│ [Notes]                     │
+│                              │
+│ [Photos] [Collections] [Create] [Search]
+└──────────────────────────────┘
+```
+
+Selecting Notes opens notes grouped by month:
+
+```text
+┌──────────────────────────────┐
+│ [Back] Notes                 │
+│ October 2026                 │
+│ [thumb] Note phrase          │
+│         Oct 4 · Place        │
+│         [Edit]               │
+│                              │
+│ September 2026               │
+│ [thumb] Another note         │
+│         Sep 12 · Place       │
+│         [Edit]               │
+└──────────────────────────────┘
+```
+
+- Opening a note row opens its photo in the viewer.
+- Edit opens an inline field limited to 60 characters. Save persists the change; saving a blank value removes the note. Cancel abandons the draft.
+- With no saved notes, the page presents an empty state explaining that added notes will appear here.
+- Other collection destinations include People & pets, Places, Albums, Moments, Documents, Screenshots, Favorites, and Trash. Where relevant, selecting an item opens a filtered photo grid and selecting a photo opens the viewer.
+
+### 5. Search / Ask
+
+```text
+┌──────────────────────────────┐
+│ [Back] [query token] [input] │
+│                              │
+│ [ Search ] [ Ask ]           │
+│                              │
+│ Suggested clues              │  Visible before text is entered
+│ [From your notes] [Where]    │
+│ [Who] [When] [Kind]          │
+│                              │
+│ Matching photo grid          │
+│ [photo] [photo] [photo]      │
+└──────────────────────────────┘
+```
+
+- Search begins with a focused input. As the user types, matching autocomplete suggestions can be selected as tokens; tokens can be removed.
+- Search and Ask are separate modes. Ask offers clue starters when empty; Search shows clue chips when empty.
+- Search uses photo notes and library metadata such as place, city, people, date, photo kind, album, and tags. Local semantic/concept scoring provides the fallback. A configured server model may additionally rank metadata matches.
+- Results are ranked photo tiles. A photo whose note supports the query can show a **Your note** label with the note text.
+- Selecting a result opens the photo viewer with the result list as its swipe sequence. Back closes Search.
+
+### 6. Floating Clue Results
+
+```text
+┌──────────────────────────────┐
+│ [Back] [selected clue token] │
+│                              │
+│ [photo] [photo] [photo]      │
+│ [Your note: phrase]          │
+│ [photo] [photo] [photo]      │
+└──────────────────────────────┘
+```
+
+- Returning from the simulated capture screen to Photos schedules a temporary stack of up to three clue chips above the round Search button.
+- A clue tap opens this compact results screen with the selected clue represented as a search token.
+- Back returns to the library. Selecting a photo logs a result tap and elapsed time-to-find, then opens that photo in the viewer.
+- Clues time out, disappear on feed scroll, disappear when Search opens, or are consumed when one is selected. The external Clue chips toggle controls this prototype behavior.
+
+### 7. Simulated Capture
+
+```text
+┌──────────────────────────────┐
+│ [Back]                       │
+│                              │
+│          FULL PHOTO          │
+│                              │
+│        [Add a note]          │  Appears as soon as capture completes
+│                              │
+│       [Share] [Edit] [Delete]│
+└──────────────────────────────┘
+```
+
+- The outside **Simulate new photo** control opens a full-screen captured-photo state using the prototype’s first library item.
+- The Add a note pill appears immediately after the new photo is captured. If untouched, it fades away after 2 seconds. It is 32px tall with 12px text.
+- Tapping expands the pill to an input with a 60-character counter, two photo place/time suggestions, and Save. There is no microphone control.
+- Saving collapses the pill and briefly displays “Note saved.” Back or a horizontal swipe returns to Photos; the pill is dismissed immediately and floating clues are scheduled after return.
+- The Share and Edit actions are visual affordances only in the current capture prototype. Delete returns to the library; it does not modify the sample library.
+
+### 8. Settings
+
+```text
+┌──────────────────────────────┐
+│ [Back] Settings              │
+│                              │
+│ Photo notes                  │
+│ Suggest a short note on new  │
+│ photos                [toggle]│
+└──────────────────────────────┘
+```
+
+Settings are reachable from the account avatar or More menu. The Photo notes toggle enables or disables automatic note prompts. The description is prototype copy; the actual prompt gate applies to eligible unnoted feed photos.
+
+---
+
+## End-to-End User Journeys
+
+### Journey A: Add a Note While Browsing
+
+**User intent:** attach a remembered phrase to a photo before moving on.
+
+1. User opens Photos and scrolls the date-grouped library or selects a Memory.
+2. User opens a photo. The viewer schedules an Add a note prompt if Photo notes is enabled and the photo is not already prompted or noted.
+3. After about 1 second, the prompt appears. If ignored, it times out after about 5 seconds and the user stays in the viewer.
+4. User taps Add a note. The compact pill expands to the editor and the input receives focus.
+5. User types a phrase (up to 60 characters) or selects a contextual suggestion.
+6. User selects Save. The note is persisted, a success confirmation appears briefly, and the prompt is no longer shown for that photo.
+7. User closes the viewer or continues browsing. The saved note is available in the Info sheet, Notes collection, and search matching.
+
+**Alternate paths:** user closes or swipes while the prompt is visible (prompt is dismissed and ignored); user cancels from Info editing (no change); blank Info save deletes the note.
+
+```mermaid
+flowchart TD
+    A[Photos feed] --> B[Open photo]
+    B --> C{Prompt eligible?}
+    C -->|No| D[Browse photo / open Info]
+    C -->|Yes| E[Wait about 1 second]
+    E --> F[Add a note pill]
+    F -->|Ignore for about 5 seconds| G[Dismiss prompt]
+    F -->|Tap| H[Expand editor]
+    H --> I{Type or choose suggestion}
+    I --> J[Save note]
+    J --> K[Persist note and show confirmation]
+    K --> L[Find later in Notes or Search]
+```
+
+### Journey B: Add or Edit a Note from Photo Info
+
+**User intent:** add or correct a note while inspecting photo details.
+
+1. Open a photo and tap Info (or More in the bottom viewer actions).
+2. Review date/time, location, and people.
+3. If the photo has no note, select Add note. If it has a note, select Edit.
+4. Edit up to 60 characters; select Save or Cancel.
+5. Save returns to the Info view with the persisted note. Delete removes an existing note.
+
+### Journey C: Edit an Older Note from Collections
+
+**User intent:** locate and update a note without finding the photo in the feed.
+
+1. Select Collections from the bottom navigation.
+2. Open Notes.
+3. Scan notes grouped by month, using each thumbnail, date, and place as context.
+4. Select Edit on the desired row.
+5. Update the text and Save, or choose Cancel.
+6. The list shows the updated note; the photo remains accessible by opening its row.
+
+### Journey D: Rediscover a Photo with Search
+
+**User intent:** find a photo using partial memory rather than an exact file/date.
+
+1. Tap Search from Photos.
+2. Enter a natural-language clue (for example, `cafe meetup`) or select a suggested clue.
+3. Review autocomplete and select a token if useful; continue typing to refine.
+4. Review ranked photo results and any **Your note** labels.
+5. Open a result. The viewer opens on that match; the search journey logs result selection and time-to-find.
+6. Close the viewer or search to return to the photo library.
+
+### Journey E: Rediscover via a Floating Clue
+
+**User intent:** reuse a recent note/date/place clue immediately after capture.
+
+1. Start from Photos and select the outside demo control **Simulate new photo**.
+2. The Add a note pill appears immediately. Tap it before it fades after 2 seconds, then optionally save a note.
+3. Return with Back or swipe.
+4. After about 1 second, review the floating clue stack above Search.
+5. Tap a clue to open clue-token results; select a photo to view it.
+6. Return to Photos. The current clue set is consumed and does not reappear until a new capture/session trigger.
+
+### Journey F: Browse a Collection
+
+**User intent:** browse a semantic grouping instead of searching text.
+
+1. Select Collections.
+2. Choose People & pets, Places, Albums, Moments, Documents, Screenshots, Favorites, Trash, or Notes.
+3. Select a person/place/album/moment/category to open a filtered grid where applicable.
+4. Select a photo to open the viewer; use swipe to move within the current result list.
+5. Use Back to return to the collection list or its parent grouping.
+
+---
+
+## States and Decision Rules
+
+| Area | State or trigger | User-visible result |
+|---|---|---|
+| Feed | Initial load | Photos grouped by date, Memories row, bottom navigation |
+| Viewer prompt | Photo notes off | No automatic note prompt |
+| Viewer prompt | Photo already prompted or already has a note | No automatic prompt |
+| Viewer prompt | Unnoted and not previously prompted | Prompt appears after about 1 second |
+| Prompt | Ignored | Prompt fades/dismisses after about 5 seconds |
+| Capture note pill | New photo captured | Pill appears immediately and fades after 2 seconds if untouched |
+| Prompt | Expanded | Note field, counter, contextual suggestions, Save |
+| Notes collection | No saved notes | Empty state |
+| Notes collection | One or more saved notes | Notes grouped by month, each row openable/editable |
+| Search | Empty input | Search clue chips or Ask starter clues |
+| Search | Input text | Autocomplete suggestions and ranked matches |
+| Results | Note supports match | Tile can include **Your note** and note text |
+| Floating clues | Returned from simulated capture | Up to three chips after about 1 second |
+| Floating clues | Scroll, search, tap, or timeout | Chips are removed/consumed |
+| Capture | Note saved | Pill collapses; “Note saved” confirmation appears briefly |
+| Capture | Back or horizontal swipe | Return to Photos; schedule floating clues |
+
+---
+
+## Data and Persistence
+
+- Sample photos carry an identifier, image source, capture timestamp, place/city, people, kind, album, and tags.
+- Notes are associated with photo IDs and persisted in browser `localStorage` under `gp-notes-proto-v1`.
+- Prompt history, feature toggles, ignored-prompt state, and the event log are persisted in the same browser storage.
+- Search combines note text with available metadata. The current sample library and local scoring are demonstration-scale, not a production index.
+
+---
+
+## Instrumentation
+
+The prototype event log records user actions and search behavior. Note/capture-related events include `pill_shown`, `pill_expanded`, `pill_ignored`, and `note_saved` (including source and seconds to save). Rediscovery events include `floating_chip_shown`, `floating_chip_tap`, `result_tap`, and `time_to_find`. Other search events may include query entry/reformulation and search open/abandonment.
+
+**Suggested MVP outcome measures:**
+
+- Note prompt expansion rate: expanded prompts ÷ shown prompts.
+- Note completion rate: saved notes ÷ expanded prompts.
+- Prompt dismissal rate and time-to-save by note source.
+- Clue engagement rate: clue taps ÷ clue impressions.
+- Retrieval success rate: photo result opens ÷ search/clue journeys.
+- Median time-to-find, segmented by typed search versus floating clue.
+- Note edit/delete rate as a signal of note quality or correction need.
+
+---
+
+## Prototype Boundaries and Open Decisions
+
+- Reset, Seed example note, Simulate new photo, Clue chips on/off, and Event log are lab controls outside the phone frame; hide or replace them in a production app.
+- The seeded note is demo data. Reset clears locally persisted state and event history.
+- Share/Edit in the simulated capture action row are visual-only in the current prototype. Delete exits capture but does not delete library data.
+- The capture path uses the first sample-library photo as its simulated newly captured photo. This is a deterministic demo fixture, not a real camera integration.
+- Search is a hybrid demo: local concept/keyword scoring is available; server-side semantic ranking depends on backend/API configuration.
+- Notes and prompt history are browser-local. No account sync, cross-device persistence, photo upload, permissions, or production privacy controls are represented.
+- The ordinary viewer note prompt and the simulated capture note pill are separate implementations: the viewer prompt appears after about 1 second and fades after about 5 seconds; the capture pill appears immediately and fades after 2 seconds. Keep this distinction explicit or unify their timing before production.
+- Confirm product policy for repeat prompts, dismissal frequency limits, prompt behavior after editing/deleting a note, and whether floating clues should include photo place versus city.
