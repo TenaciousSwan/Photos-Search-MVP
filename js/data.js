@@ -123,20 +123,33 @@ const EXTRA_SCENES = [
   { place: "Lisbon Tram Line", city: "Lisbon", album: "Europe", tags: ["tram", "street", "city"] },
   { place: "Amalfi Coast", city: "Amalfi", album: "Italy", tags: ["coast", "village", "ocean"] },
   { place: "Swiss Alpine Meadow", city: "Bern", album: "Switzerland", tags: ["meadow", "mountains", "flowers"] },
-  { place: "Istanbul Bazaar", city: "Istanbul", album: "Turkey", tags: ["bazaar", "spices", "architecture"] }
+  { place: "Istanbul Bazaar", city: "Istanbul", album: "Turkey", tags: ["bazaar", "spices", "architecture"] },
+  { place: "Patagonia Ridge", city: "El Calafate", album: "Argentina", tags: ["mountains", "trail", "glacier"] },
+  { place: "Cape Town Waterfront", city: "Cape Town", album: "South Africa", tags: ["harbor", "city", "sunset"] },
+  { place: "Jeju Coast", city: "Jeju", album: "Korea", tags: ["beach", "cliffs", "travel"] },
+  { place: "Kyiv Old Town", city: "Kyiv", album: "Ukraine", tags: ["historic", "architecture", "walk"] },
+  { place: "Bavarian Village", city: "Munich", album: "Germany", tags: ["village", "church", "winter"] },
+  { place: "Santorini Blue Dome", city: "Santorini", album: "Greece", tags: ["island", "ocean", "architecture"] },
+  { place: "Machu Picchu Trail", city: "Cusco", album: "Peru", tags: ["ruins", "hiking", "mountains"] },
+  { place: "Queenstown Lakefront", city: "Queenstown", album: "New Zealand", tags: ["lake", "adventure", "mountains"] },
+  { place: "Sicilian Terrace", city: "Sicily", album: "Italy", tags: ["terrace", "sunset", "village"] },
+  { place: "Dubai Marina", city: "Dubai", album: "UAE", tags: ["marina", "city", "night"] },
+  { place: "Seoul Night Market", city: "Seoul", album: "Korea", tags: ["night", "market", "food"] },
+  { place: "Aegean Shore", city: "Mykonos", album: "Greece", tags: ["shore", "summer", "boats"] },
+  { place: "Costa Rica Rainforest", city: "Arenal", album: "Costa Rica", tags: ["forest", "waterfall", "wildlife"] }
 ];
 
 const EXTRA_PEOPLE = [
   ["Maya", "Arjun"], ["Priya"], ["Dad", "Maya"], [], ["Luna", "Maya"], ["Arjun", "Priya"]
 ];
 
-const EXTRA_PHOTOS = Array.from({ length: 150 }, (_, index) => {
+const EXTRA_PHOTOS = Array.from({ length: 400 }, (_, index) => {
   const scene = EXTRA_SCENES[index % EXTRA_SCENES.length];
-  const captureDate = new Date(NOW.getTime() - (index + 1) * 8 * 24 * 60 * 60 * 1000);
+  const captureDate = new Date(NOW.getTime() - (index + 1) * 5 * 24 * 60 * 60 * 1000);
   const id = `p${String(index + 63).padStart(3, "0")}`;
   const kind = index % 31 === 0 ? "screenshot" : index % 47 === 0 ? "document" : "photo";
   const people = EXTRA_PEOPLE[index % EXTRA_PEOPLE.length];
-  const seed = `photos-mvp-${id}`;
+  const seed = `photos-mvp-${id}-${index}`;
   return {
     id,
     img: 2000 + index,
@@ -147,7 +160,7 @@ const EXTRA_PHOTOS = Array.from({ length: 150 }, (_, index) => {
     people,
     kind,
     album: scene.album,
-    tags: scene.tags,
+    tags: [...scene.tags, ...(index % 2 === 0 ? ["travel", "memory"] : ["moments", "story"])],
     pet: people.includes("Luna"),
     src: `https://picsum.photos/seed/${seed}/800/800`,
     thumb: `https://picsum.photos/seed/${seed}/400/400`,

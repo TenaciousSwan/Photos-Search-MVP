@@ -58,6 +58,7 @@ let semanticResultsSig = "";
 let semanticRequestedSig = "";
 let semanticTimer = null;
 let capturePhoto = null;
+let captureOptions = [];
 let capturePromptTimer = null;
 let captureFadeTimer = null;
 let captureDismissTimer = null;
@@ -197,7 +198,7 @@ function renderPhotos() {
   });
   return `
     <div class="screen">
-      ${topbar("")}
+      ${topbar("", `<div class="capture-cta-wrap"><button type="button" id="captureFromGallery" class="capture-cta"><span class="material-symbols-outlined">add_a_photo</span>Capture</button></div>`) }
       <div class="scroll" id="mainScroll">
         <div class="memories">
           ${MEMORIES.map((m) => {
@@ -552,9 +553,16 @@ function renderCapture() {
     `${photo.date.toLocaleDateString("en-US", { month: "long" })} at ${photo.place}`,
     `${photo.date.toLocaleDateString("en-US", { weekday: "long" })} in ${photo.city}`
   ];
+  const choiceGrid = captureOptions.length ? captureOptions.map((choice) => `
+    <button type="button" class="capture-choice ${choice.id === photo.id ? "active" : ""}" data-capture-choice="${choice.id}" aria-label="Select photo ${escapeHtml(choice.place)}">
+      <img src="${choice.thumb}" alt="" />
+    </button>
+  `).join("") : "";
   return `<div class="screen capture-screen" id="captureScreen">
     <img class="capture-image" src="${photo.src}" alt="Captured photo" draggable="false" />
     <button type="button" class="capture-back" id="captureBack" aria-label="Back"><span class="material-symbols-outlined">arrow_back</span></button>
+    <input id="captureFileInput" type="file" accept="image/*" hidden />
+    <div class="capture-choice-grid">${choiceGrid}</div>
     ${capturePillVisible ? (capturePillExpanded ? `
       <div class="capture-note expanded ${capturePillFading ? "fading" : ""}" id="captureNote">
         <div class="capture-suggestions">${suggestions.map((text) => `<button type="button" data-capture-suggestion="${escapeHtml(text)}">${escapeHtml(text)}</button>`).join("")}</div>
@@ -568,6 +576,7 @@ function renderCapture() {
     : ""}
     ${captureToast ? `<div class="capture-toast">${escapeHtml(captureToast)}</div>` : ""}
     <div class="capture-actions">
+      <button type="button" id="captureUpload"><span class="material-symbols-outlined">upload</span><small>Upload</small></button>
       <button type="button"><span class="material-symbols-outlined">share</span><small>Share</small></button>
       <button type="button"><span class="material-symbols-outlined">edit</span><small>Edit</small></button>
       <button type="button" id="captureDelete"><span class="material-symbols-outlined">delete</span><small>Delete</small></button>
@@ -927,13 +936,20 @@ function showFloatingClues() {
   floatingChipTimer = setTimeout(() => hideFloatingClues("timeout"), 8000);
 }
 
+function pickCaptureOptions() {
+  const pool = photosSorted().filter((p) => p.kind === "photo");
+  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, 6);
+}
+
 function openCapture() {
   clearTimeout(floatingChipTimer);
   clearTimeout(floatingReturnTimer);
   clearTimeout(captureToastTimer);
   floatingCluesVisible = false;
   floatingCluesConsumed = false;
-  capturePhoto = LIBRARY[0];
+  captureOptions = pickCaptureOptions();
+  capturePhoto = captureOptions[0] || LIBRARY[0];
   captureNoteText = "";
   captureNoteSource = "typed";
   capturePillVisible = false;
@@ -1037,17 +1053,84 @@ function addChip(group, value) {
   document.getElementById("searchInput")?.focus();
 }
 
+function createUploadedPhoto(file) {
+  const now = new Date();
+  const id = `upload-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const src = URL.createObjectURL(file);
+  const customPhoto = {
+    id,
+    img: 9999,
+    taken: now.toISOString(),
+    date: now,
+    place: "Uploaded photo",
+    city: "My uploads",
+    people: [],
+    kind: "photo",
+    album: "Uploads",
+    favorite: false,
+    tags: ["uploaded", "custom"],
+    pet: false,
+    src,
+    thumb: src,
+    note: "",
+    isUploaded: true,
+    fileName: file.name
+  };
+  LIBRARY.unshift(customPhoto);
+  return customPhoto;
+}
+
+function handleCaptureUpload(event) {
+  const file = event.target.files?.[0];
+  if (!file || !file.type.startsWith("image/")) {
+    event.target.value = "";
+    return;
+  }
+  const uploaded = createUploadedPhoto(file);
+  captureOptions = [uploaded, ...captureOptions.filter((photo) => photo.id !== uploaded.id)].slice(0, 6);
+  capturePhoto = uploaded;
+  captureNoteText = "";
+  captureNoteSource = "typed";
+  capturePillVisible = true;
+  capturePillExpanded = false;
+  capturePillFading = false;
+  clearCaptureTimers();
+  clearTimeout(captureToastTimer);
+  captureToast = "";
+  capturePromptStartedAt = Date.now();
+  logEvent("photo_uploaded", { photoId: uploaded.id, fileName: uploaded.fileName });
+  render();
+  document.getElementById("captureNoteInput")?.focus();
+  event.target.value = "";
+}
+
 function bind() {
   document.querySelectorAll("[data-tab]").forEach((b) => {
     b.onclick = () => { tab = b.dataset.tab; overlay = null; menuOpen = false; render(); };
   });
   document.getElementById("searchFab")?.addEventListener("click", openSearch);
+  document.getElementById("captureFromGallery")?.addEventListener("click", openCapture);
   document.querySelectorAll("[data-floating-clue]").forEach((button) => {
     button.addEventListener("click", () => openFloatingClue(Number(button.dataset.floatingClue)));
   });
   document.getElementById("mainScroll")?.addEventListener("scroll", () => hideFloatingClues("scroll"), { once: true, passive: true });
   document.getElementById("captureBack")?.addEventListener("click", () => returnToLibrary("back"));
   document.getElementById("captureDelete")?.addEventListener("click", () => returnToLibrary("delete"));
+  document.getElementById("captureUpload")?.addEventListener("click", () => {
+    document.getElementById("captureFileInput")?.click();
+  });
+  document.querySelectorAll("[data-capture-choice]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const selected = captureOptions.find((photo) => photo.id === button.dataset.captureChoice);
+      if (selected) {
+        capturePhoto = selected;
+        captureNoteText = "";
+        captureNoteSource = "typed";
+        render();
+      }
+    });
+  });
+  document.getElementById("captureFileInput")?.addEventListener("change", handleCaptureUpload);
   document.getElementById("captureExpand")?.addEventListener("click", () => {
     capturePillExpanded = true;
     capturePillFading = false;
@@ -1110,7 +1193,10 @@ function bind() {
     });
   });
   const captureImage = document.querySelector(".capture-image");
-  if (captureImage) bindCaptureSwipe(captureImage);
+  if (captureImage) {
+    bindCaptureSwipe(captureImage);
+    captureImage.addEventListener("click", () => document.getElementById("captureFileInput")?.click());
+  }
   document.getElementById("moreBtn")?.addEventListener("click", () => { menuOpen = !menuOpen; render(); });
   document.getElementById("avatarBtn")?.addEventListener("click", () => {
     overlay = { type: "settings" }; menuOpen = false; render();
