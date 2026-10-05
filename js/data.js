@@ -93,6 +93,70 @@ const LIBRARY = [
 
 const NOW = new Date("2026-10-04T15:47:00");
 
+const EXTRA_SCENES = [
+  { place: "Kyoto Bamboo Grove", city: "Kyoto", album: "Japan", tags: ["bamboo", "temple", "travel"] },
+  { place: "Nusa Penida", city: "Bali", album: "Indonesia", tags: ["island", "ocean", "cliffs"] },
+  { place: "Marrakech Medina", city: "Marrakech", album: "Morocco", tags: ["market", "colors", "architecture"] },
+  { place: "Louvre Courtyard", city: "Paris", album: "Europe", tags: ["museum", "art", "architecture"] },
+  { place: "Old Town Square", city: "Prague", album: "Europe", tags: ["square", "historic", "travel"] },
+  { place: "Lake Bled", city: "Bled", album: "Europe", tags: ["lake", "mountains", "boat"] },
+  { place: "Moraine Lake", city: "Alberta", album: "Canada", tags: ["lake", "hiking", "mountains"] },
+  { place: "Banff Trail", city: "Banff", album: "Canada", tags: ["hiking", "forest", "wildlife"] },
+  { place: "Brooklyn Bridge", city: "New York", album: "East Coast", tags: ["bridge", "skyline", "city"] },
+  { place: "Central Park", city: "New York", album: "East Coast", tags: ["park", "autumn", "walk"] },
+  { place: "French Quarter", city: "New Orleans", album: "South", tags: ["music", "street", "food"] },
+  { place: "Savannah Riverfront", city: "Savannah", album: "South", tags: ["river", "historic", "sunset"] },
+  { place: "Zion Canyon", city: "Utah", album: "Southwest", tags: ["canyon", "hiking", "desert"] },
+  { place: "Joshua Tree", city: "California", album: "Southwest", tags: ["desert", "stars", "camping"] },
+  { place: "Reykjavik Harbor", city: "Reykjavik", album: "Iceland", tags: ["harbor", "winter", "travel"] },
+  { place: "Skogafoss", city: "Iceland", album: "Iceland", tags: ["waterfall", "hiking", "mist"] },
+  { place: "Table Mountain", city: "Cape Town", album: "South Africa", tags: ["mountain", "hiking", "ocean"] },
+  { place: "Serengeti Plains", city: "Tanzania", album: "Africa", tags: ["safari", "wildlife", "sunset"] },
+  { place: "Sydney Harbour", city: "Sydney", album: "Australia", tags: ["harbor", "boats", "city"] },
+  { place: "Great Ocean Road", city: "Victoria", album: "Australia", tags: ["coast", "road trip", "cliffs"] },
+  { place: "Hoi An Lantern Street", city: "Hoi An", album: "Vietnam", tags: ["lanterns", "night", "street food"] },
+  { place: "Ha Long Bay", city: "Vietnam", album: "Vietnam", tags: ["bay", "boat", "islands"] },
+  { place: "Sigiriya Rock", city: "Sri Lanka", album: "Sri Lanka", tags: ["historic", "hiking", "view"] },
+  { place: "Jaipur Pink City", city: "Jaipur", album: "India", tags: ["market", "palace", "colors"] },
+  { place: "Fort Kochi", city: "Kochi", album: "India", tags: ["harbor", "street", "seafood"] },
+  { place: "Alleppey Backwaters", city: "Kerala", album: "India", tags: ["canal", "boat", "palm trees"] },
+  { place: "Lisbon Tram Line", city: "Lisbon", album: "Europe", tags: ["tram", "street", "city"] },
+  { place: "Amalfi Coast", city: "Amalfi", album: "Italy", tags: ["coast", "village", "ocean"] },
+  { place: "Swiss Alpine Meadow", city: "Bern", album: "Switzerland", tags: ["meadow", "mountains", "flowers"] },
+  { place: "Istanbul Bazaar", city: "Istanbul", album: "Turkey", tags: ["bazaar", "spices", "architecture"] }
+];
+
+const EXTRA_PEOPLE = [
+  ["Maya", "Arjun"], ["Priya"], ["Dad", "Maya"], [], ["Luna", "Maya"], ["Arjun", "Priya"]
+];
+
+const EXTRA_PHOTOS = Array.from({ length: 150 }, (_, index) => {
+  const scene = EXTRA_SCENES[index % EXTRA_SCENES.length];
+  const captureDate = new Date(NOW.getTime() - (index + 1) * 8 * 24 * 60 * 60 * 1000);
+  const id = `p${String(index + 63).padStart(3, "0")}`;
+  const kind = index % 31 === 0 ? "screenshot" : index % 47 === 0 ? "document" : "photo";
+  const people = EXTRA_PEOPLE[index % EXTRA_PEOPLE.length];
+  const seed = `photos-mvp-${id}`;
+  return {
+    id,
+    img: 2000 + index,
+    taken: captureDate.toISOString(),
+    date: captureDate,
+    place: scene.place,
+    city: scene.city,
+    people,
+    kind,
+    album: scene.album,
+    tags: scene.tags,
+    pet: people.includes("Luna"),
+    src: `https://picsum.photos/seed/${seed}/800/800`,
+    thumb: `https://picsum.photos/seed/${seed}/400/400`,
+    note: ""
+  };
+});
+
+LIBRARY.push(...EXTRA_PHOTOS);
+
 const PEOPLE_META = {
   Maya: { img: 64 },
   Arjun: { img: 91 },

@@ -154,16 +154,10 @@ function autocomplete(photos, notes, typed) {
     set.push({ label, group });
   };
   photos.forEach((p) => {
-    add(p.city, "Where");
-    add(p.place, "Where");
-    p.people.forEach((n) => add(n, "Who"));
-    if (p.kind === "screenshot") add("Screenshots", "Kind");
-    if (p.kind === "document") add("Documents", "Kind");
-    if (p.kind === "receipt") add("Receipts", "Kind");
+    (p.tags || []).forEach((tag) => add(tag, "Subject"));
     const n = notes[p.id];
-    if (n) add(n, "From your notes");
+    if (n) add(n, "Subject");
   });
-  ["Last month", "Last summer", "Around Diwali", "Today"].forEach((x) => add(x, "When"));
   return set.slice(0, 8);
 }
 
@@ -185,6 +179,10 @@ function filterByChips(photos, chips, notes = {}) {
     if (c.group === "When") {
       const s = scorePhoto(p, "", c.value, [c], NOW);
       return s.total > 0;
+    }
+    if (c.group === "Subject") {
+      const note = (notes[p.id] || "").toLowerCase();
+      return note.includes(v) || (p.tags || []).some((tag) => tag.toLowerCase() === v);
     }
     if (c.group === "From your notes") {
       const n = (notes[p.id] || "").toLowerCase();

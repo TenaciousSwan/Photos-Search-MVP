@@ -687,39 +687,29 @@ function uniqueKeep(list, keyFn) {
 
 function buildClueChips() {
   const pool = filterByChips(LIBRARY, searchChips, state.notes);
-  const chips = [];
-  const notes = pool.filter((p) => state.notes[p.id]);
-  notes.forEach((p) => {
-    chips.push({ group: "From your notes", value: state.notes[p.id] });
-  });
-  const people = uniqueKeep(pool.flatMap((p) => p.people.map((n) => ({ group: "Who", value: n }))), (x) => x.value);
-  const places = uniqueKeep(pool.map((p) => ({ group: "Where", value: p.city })), (x) => x.value);
-  const whens = [];
-  const hasLastMonth = pool.some((p) => p.date >= new Date(NOW.getFullYear(), NOW.getMonth() - 1, 1) && p.date < new Date(NOW.getFullYear(), NOW.getMonth(), 1));
-  const hasSummer = pool.some((p) => p.date >= new Date(NOW.getFullYear(), 5, 1) && p.date <= new Date(NOW.getFullYear(), 7, 31));
-  const hasDiwali = pool.some((p) => p.date >= new Date("2025-10-18") && p.date <= new Date("2025-10-22"));
-  if (hasLastMonth) whens.push({ group: "When", value: "Last month" });
-  if (hasSummer) whens.push({ group: "When", value: "Last summer" });
-  if (hasDiwali) whens.push({ group: "When", value: "Around Diwali" });
-  const kinds = [];
-  if (pool.some((p) => p.kind === "screenshot")) kinds.push({ group: "Kind", value: "Screenshots" });
-  if (pool.some((p) => p.kind === "document")) kinds.push({ group: "Kind", value: "Documents" });
-  if (pool.some((p) => p.kind === "receipt")) kinds.push({ group: "Kind", value: "Receipts" });
-
   const selected = new Set(searchChips.map((c) => c.group + ":" + c.value));
-  const ordered = [];
-  const take = (arr) => {
-    arr.forEach((c) => {
-      const k = c.group + ":" + c.value;
-      if (!selected.has(k) && !ordered.some((o) => o.group + ":" + o.value === k)) ordered.push(c);
-    });
-  };
-  take(chips);
-  take(people);
-  take(places);
-  take(whens);
-  take(kinds);
-  return ordered.slice(0, 8);
+  const subjects = [];
+  pool.forEach((photo) => {
+    const note = state.notes[photo.id];
+    if (note) subjects.push({ group: "Subject", value: note });
+    (photo.tags || []).forEach((tag) => subjects.push({ group: "Subject", value: tag }));
+  });
+  return uniqueKeep(subjects, (clue) => clue.value.trim().toLowerCase())
+    .filter((clue) => !selected.has(clue.group + ":" + clue.value))
+    .slice(0, 4);
+}
+
+function buildAskStarters(clues) {
+  const subjects = uniqueKeep(clues.map((clue) => clue.value.trim()).filter(Boolean), (value) => value.toLowerCase());
+  const firstSubject = subjects[0] || "photos";
+  const firstWord = firstSubject.split(/\s+/)[0];
+  const phraseSubjects = subjects.length > 1 ? subjects.slice(0, 2).join(" ") : `${firstSubject} photos`;
+  const starters = [
+    `${firstWord[0].toUpperCase()}${firstWord.slice(1)}`,
+    `${phraseSubjects[0].toUpperCase()}${phraseSubjects.slice(1)}`,
+    `Find photos of ${phraseSubjects}`
+  ];
+  return uniqueKeep(starters.map((value) => ({ group: "Subject", value: value.slice(0, 52) })), (item) => item.value.toLowerCase()).slice(0, 3);
 }
 
 function resultsForSearch() {
@@ -814,13 +804,13 @@ function renderSearch() {
         ${searchMode === "ask" && !typing && !searchChips.length ? `
           <div class="ask-hint">Start from a clue</div>
           <div class="ask-starters">
-            ${clues.map((c) => `<button type="button" data-chip="${escapeHtml(c.value)}" data-group="${c.group}">${escapeHtml(c.value)}</button>`).join("")}
+            ${buildAskStarters(clues).map((c) => `<button type="button" data-chip="${escapeHtml(c.value)}" data-group="${c.group}" title="${escapeHtml(c.value)}">${escapeHtml(c.value)}</button>`).join("")}
           </div>` : ""}
         ${searchMode === "search" && !typing ? `<div class="chip-row" id="clueRow">
-          ${clues.map((c) => `<button type="button" class="clue" data-chip="${escapeHtml(c.value)}" data-group="${c.group}"><span class="g">${c.group}</span>${escapeHtml(c.value)}</button>`).join("")}
+          ${clues.map((c) => `<button type="button" class="clue" data-chip="${escapeHtml(c.value)}" data-group="${c.group}">${escapeHtml(c.value)}</button>`).join("")}
         </div>` : ""}
         ${typing ? `<div class="ac-list">${ac.map((a) => `<button type="button" class="ac-item" data-ac="${escapeHtml(a.label)}" data-group="${a.group}">
-          <span class="material-symbols-outlined">search</span>${escapeHtml(a.label)} <span>${a.group}</span>
+          <span class="material-symbols-outlined">search</span>${escapeHtml(a.label)}
         </button>`).join("")}</div>` : ""}
         ${results.length ? `<div class="grid3" style="padding:8px 2px 24px">
           ${results.map((r) => tileHTML(r.photo, { noteChip: true, noteMatch: r.noteMatch })).join("")}
@@ -917,19 +907,11 @@ function buildFloatingClues() {
   const notedPhoto = photosSorted().find((photo) => state.notes[photo.id]);
   const contextPhoto = notedPhoto || capturePhoto || photosSorted()[0];
   const latestNote = notedPhoto ? state.notes[notedPhoto.id] : "";
-  if (latestNote) list.push({ group: "From your notes", value: latestNote, label: clueLabel(latestNote), photoId: notedPhoto.id });
-  const today = new Date(NOW); today.setHours(0, 0, 0, 0);
-  const photoDay = new Date(contextPhoto.date); photoDay.setHours(0, 0, 0, 0);
-  const daysAgo = Math.round((today - photoDay) / 86400000);
-  const timeValue = daysAgo <= 0 ? "Today"
-    : daysAgo === 1 ? "Yesterday"
-    : contextPhoto.date.getMonth() === NOW.getMonth() && contextPhoto.date.getFullYear() === NOW.getFullYear() ? "This month"
-    : contextPhoto.date.getMonth() === (NOW.getMonth() + 11) % 12 && contextPhoto.date.getFullYear() === (NOW.getMonth() === 0 ? NOW.getFullYear() - 1 : NOW.getFullYear()) ? "Last month"
-    : contextPhoto.date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
-  list.push({ group: "When", value: timeValue, label: clueLabel(timeValue), photoId: contextPhoto.id });
-  const place = contextPhoto.place;
-  list.push({ group: "Where", value: place, label: clueLabel(place), photoId: contextPhoto.id });
-  return list.slice(0, 3);
+  if (latestNote) list.push({ group: "Subject", value: latestNote, label: clueLabel(latestNote), photoId: notedPhoto.id });
+  (contextPhoto.tags || []).forEach((tag) => {
+    list.push({ group: "Subject", value: tag, label: clueLabel(tag), photoId: contextPhoto.id });
+  });
+  return uniqueKeep(list, (clue) => clue.value.toLowerCase()).slice(0, 4);
 }
 
 function showFloatingClues() {
