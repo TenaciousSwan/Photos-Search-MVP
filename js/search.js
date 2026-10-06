@@ -140,7 +140,11 @@ function searchLibrary(photos, notes, query, chips, now) {
     const s = scorePhoto(p, notes[p.id] || "", q, chips, now);
     return { photo: p, ...s };
   }).filter((r) => r.total > 1.2);
-  ranked.sort((a, b) => b.total - a.total);
+  ranked.sort((a, b) => {
+    if (a.noteMatch !== b.noteMatch) return Number(b.noteMatch) - Number(a.noteMatch);
+    if (a.noteScore !== b.noteScore) return b.noteScore - a.noteScore;
+    return b.total - a.total;
+  });
   return ranked;
 }
 

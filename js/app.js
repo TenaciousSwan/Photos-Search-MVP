@@ -452,13 +452,16 @@ function canPrompt(photo) {
 }
 
 function suggestionChips(photo) {
-  const h = photo.date.getHours();
+  const date = photo.date instanceof Date ? photo.date : new Date(photo.taken || Date.now());
+  const h = date.getHours();
   const meal = h < 11 ? "Morning" : h < 15 ? "Lunch" : h < 17 ? "Afternoon" : "Evening";
-  const dow = photo.date.toLocaleDateString("en-US", { weekday: "long" });
+  const dow = date.toLocaleDateString("en-US", { weekday: "long" });
   const chips = [];
-  chips.push(`${meal} at ${photo.place}`);
-  if (photo.people[0]) chips.push(`${photo.people[0]} at ${photo.place}`);
-  chips.push(`${dow} in ${photo.city}`);
+  if (photo.place && photo.place !== "Uploaded photo") chips.push(photo.place);
+  if (photo.people[0]) chips.push(photo.people[0]);
+  (photo.tags || []).filter((tag) => !["uploaded", "custom"].includes(tag.toLowerCase())).forEach((tag) => chips.push(tag));
+  chips.push(meal, dow);
+  if (photo.city && photo.city !== "My uploads") chips.push(photo.city);
   return [...new Set(chips)].slice(0, 3);
 }
 
@@ -549,10 +552,7 @@ function swipeTo(delta) {
 
 function renderCapture() {
   const photo = capturePhoto || photoById("p15");
-  const suggestions = [
-    `${photo.date.toLocaleDateString("en-US", { month: "long" })} at ${photo.place}`,
-    `${photo.date.toLocaleDateString("en-US", { weekday: "long" })} in ${photo.city}`
-  ];
+  const suggestions = suggestionChips(photo);
   const choiceGrid = captureOptions.length ? captureOptions.map((choice) => `
     <button type="button" class="capture-choice ${choice.id === photo.id ? "active" : ""}" data-capture-choice="${choice.id}" aria-label="Select photo ${escapeHtml(choice.place)}">
       <img src="${choice.thumb}" alt="" />
@@ -565,7 +565,7 @@ function renderCapture() {
     <div class="capture-choice-grid">${choiceGrid}</div>
     ${capturePillVisible ? (capturePillExpanded ? `
       <div class="capture-note expanded ${capturePillFading ? "fading" : ""}" id="captureNote">
-        <div class="capture-suggestions">${suggestions.map((text) => `<button type="button" data-capture-suggestion="${escapeHtml(text)}">${escapeHtml(text)}</button>`).join("")}</div>
+        <div class="capture-suggestion-group"><span class="suggestion-example-label">E.g.</span><div class="capture-suggestions">${suggestions.map((text) => `<button type="button" data-capture-suggestion="${escapeHtml(text)}">${escapeHtml(text)}</button>`).join("")}</div></div>
         <div class="capture-note-row">
           <input id="captureNoteInput" maxlength="60" value="${escapeHtml(captureNoteText)}" placeholder="Add a note" />
           <span class="counter" id="captureCounter">${captureNoteText.length}/60</span>
@@ -619,7 +619,7 @@ function renderViewer() {
           <input id="noteInput" maxlength="60" placeholder="Add a note" value="${escapeHtml(promptNote)}" />
           <span class="counter">${promptNote.length}/60</span>
         </div>
-        <div class="sug">${chips.map((c) => `<button type="button" data-sug="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join("")}</div>
+        <div class="suggestion-group"><span class="suggestion-example-label">E.g.</span><div class="sug">${chips.map((c) => `<button type="button" data-sug="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join("")}</div></div>
         <button type="button" class="np-save" id="saveNote">Save</button>
       </div>` : ""}
       ${toast ? `<div class="toast">${toast}</div>` : ""}
@@ -697,13 +697,14 @@ function uniqueKeep(list, keyFn) {
 function buildClueChips() {
   const pool = filterByChips(LIBRARY, searchChips, state.notes);
   const selected = new Set(searchChips.map((c) => c.group + ":" + c.value));
-  const subjects = [];
+  const noteSubjects = [];
+  const generalSubjects = [];
   pool.forEach((photo) => {
     const note = state.notes[photo.id];
-    if (note) subjects.push({ group: "Subject", value: note });
-    (photo.tags || []).forEach((tag) => subjects.push({ group: "Subject", value: tag }));
+    if (note) noteSubjects.push({ group: "Subject", value: note });
+    (photo.tags || []).forEach((tag) => generalSubjects.push({ group: "Subject", value: tag }));
   });
-  return uniqueKeep(subjects, (clue) => clue.value.trim().toLowerCase())
+  return uniqueKeep([...noteSubjects, ...generalSubjects], (clue) => clue.value.trim().toLowerCase())
     .filter((clue) => !selected.has(clue.group + ":" + clue.value))
     .slice(0, 4);
 }
